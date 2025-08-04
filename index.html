@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collaborative Notes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="container mx-auto max-w-3xl px-4 py-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-900">Collaborative Notes</h1>
+            <p class="text-gray-600">Your real-time, shared notebook.</p>
+        </header>
+
+        <div id="auth-container" class="text-center">
+            <button id="google-signin-btn" class="bg-white hover:bg-gray-200 text-gray-800 font-semibold py-3 px-6 border border-gray-400 rounded-lg shadow-md inline-flex items-center">
+                <img class="w-6 h-6 mr-3" src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png" alt="Google logo">
+                Sign in with Google
+            </button>
+        </div>
+
+        <main id="app" class="hidden">
+            <div id="user-profile" class="bg-white p-4 rounded-lg shadow-md mb-8 flex items-center justify-between">
+                <div class="flex items-center">
+                    <img id="user-photo" class="w-12 h-12 rounded-full mr-4" src="https://placehold.co/100x100/E2E8F0/4A5568?text=User" alt="User profile picture">
+                    <div>
+                        <p id="user-name" class="font-semibold text-lg"></p>
+                        <p id="user-email" class="text-sm text-gray-600"></p>
+                        <!-- NEW: Display User ID for sharing -->
+                        <p id="user-id-display" class="text-xs text-gray-500 mt-1 cursor-pointer" title="Click to copy User ID"></p>
+                    </div>
+                </div>
+                <button id="signout-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">
+                    Sign Out
+                </button>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+                 <h2 class="text-2xl font-semibold mb-4">Add a New Note</h2>
+                 <form id="note-form">
+                    <div class="flex flex-col space-y-4">
+                        <textarea id="note-content" rows="3" class="w-full p-3 border border-gray-300 rounded-lg transition" placeholder="Write your note here..."></textarea>
+                        <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out">
+                            Save Note
+                        </button>
+                    </div>
+                 </form>
+            </div>
+
+            <div id="notes-container" class="space-y-4"></div>
+        </main>
+    </div>
+    
+    <!-- Note Template -->
+    <template id="note-template">
+        <div class="bg-white p-5 rounded-lg shadow-md flex justify-between items-start gap-4">
+            <p class="note-content text-gray-800 flex-grow"></p>
+            <div class="flex-shrink-0 flex gap-2">
+                <button class="share-btn bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-3 rounded-lg transition duration-200">Share</button>
+                <button class="delete-btn bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-3 rounded-lg transition duration-200">Delete</button>
+            </div>
+        </div>
+    </template>
+    
+    <!-- Application Script -->
+    <script type="module" src="app.js"></script>
+
+</body>
+</html>
