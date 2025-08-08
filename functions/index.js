@@ -6,7 +6,7 @@ const admin = require('firebase-admin');
 admin.initializeApp();
 
 // A callable function that requires authentication, deployed to europe-west1
-exports.getUserNotesEurope = functions.region('europe-west1').https.onCall(async (data, context) => {
+exports.getUserNotes = functions.region('europe-west1').https.onCall(async (data, context) => {
   // Check if the user is authenticated
   if (!context.auth) {
     throw new functions.https.HttpsError(
@@ -40,7 +40,7 @@ exports.getUserNotesEurope = functions.region('europe-west1').https.onCall(async
 });
 
 // An HTTP function that might optionally use authentication, deployed to europe-west1
-exports.getPublicDataEurope = functions.region('europe-west1').https.onRequest(async (req, res) => {
+exports.getPublicData = functions.region('europe-west1').https.onRequest(async (req, res) => {
   try {
     const publicDataRef = admin.firestore().collection('publicData');
     const snapshot = await publicDataRef.get();
