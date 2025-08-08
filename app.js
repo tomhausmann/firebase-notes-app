@@ -181,3 +181,19 @@
                 });
             }
         });
+
+// --- Temporary Auth Test ---
+const testAuthBtn = document.getElementById('test-auth-btn');
+testAuthBtn.addEventListener('click', async () => {
+  console.log("Calling testAuth function...");
+  const testAuth = httpsCallable(functions, 'testAuth');
+  try {
+    const result = await testAuth();
+    console.log("Response from testAuth:", result.data);
+    alert(`Test Result: ${result.data.status}`);
+  } catch (error) {
+    console.error("Error calling testAuth:", error);
+    alert(`Test Error: ${error.message}`);
+  }
+});
+// --- End of Temporary Auth Test ---

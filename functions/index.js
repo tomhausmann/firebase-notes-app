@@ -66,3 +66,22 @@ exports.getPublicData = functions.https.onRequest(async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to retrieve public data.' });
   }
 });
+
+// Add this new function to the bottom of your functions/index.js
+exports.testAuth = functions.https.onCall((data, context) => {
+  // This function's only purpose is to check for the auth context.
+  functions.logger.info("--- testAuth function triggered ---");
+
+  if (context.auth) {
+    // If auth is present, log it and return success.
+    functions.logger.info("SUCCESS: Authentication context was found.", {
+      uid: context.auth.uid,
+      email: context.auth.token.email, // We can even see details from the token
+    });
+    return { status: "Authenticated!", uid: context.auth.uid };
+  } else {
+    // If auth is NOT present, log a warning and return failure.
+    functions.logger.warn("FAILURE: Authentication context was NOT found.");
+    return { status: "Not authenticated." };
+  }
+});
