@@ -5,8 +5,15 @@ const admin = require('firebase-admin');
 // Initialize the Firebase Admin SDK
 admin.initializeApp();
 
-// A callable function that requires authentication, deployed to europe-west1
-exports.getUserNotes = functions.region('europe-west1').https.onCall(async (data, context) => {
+// Set global options for all functions including the region
+// This is the v6 way to configure regions globally
+functions.setGlobalOptions({
+  region: 'europe-west1'
+});
+
+// A callable function that requires authentication
+// Note: No need to specify region here as it's set globally above
+exports.getUserNotes = functions.https.onCall(async (data, context) => {
   // Check if the user is authenticated
   if (!context.auth) {
     throw new functions.https.HttpsError(
@@ -19,6 +26,7 @@ exports.getUserNotes = functions.region('europe-west1').https.onCall(async (data
   functions.logger.info(`Fetching notes for user: ${userId}`);
 
   try {
+    // Fetch notes where the user is the owner
     const notesRef = admin.firestore().collection('notes');
     const snapshot = await notesRef.where('owner', '==', userId).get();
 
@@ -39,8 +47,9 @@ exports.getUserNotes = functions.region('europe-west1').https.onCall(async (data
   }
 });
 
-// An HTTP function that might optionally use authentication, deployed to europe-west1
-exports.getPublicData = functions.region('europe-west1').https.onRequest(async (req, res) => {
+// An HTTP function for public data
+// Also uses the global region setting
+exports.getPublicData = functions.https.onRequest(async (req, res) => {
   try {
     const publicDataRef = admin.firestore().collection('publicData');
     const snapshot = await publicDataRef.get();
