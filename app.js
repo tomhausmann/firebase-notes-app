@@ -34,7 +34,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 // NEW: Initialize Firebase Functions
-const functions = getFunctions(app); // You can specify a region: getFunctions(app, 'europe-west1');
+const functions = getFunctions(app, 'europe-west1'); // Functions are in us-central1
 
 
 // — 3. DOM ELEMENTS —
