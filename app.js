@@ -50,7 +50,8 @@
             signOut(auth).catch(error => console.error("Sign out failed", error));
         }
 
-        function handleUserLogin(user) {
+        async function handleUserLogin(user) {
+            await user.getIdToken(true);
             currentUser = {
                 uid: user.uid,
                 name: user.displayName,
