@@ -191,7 +191,7 @@ async function getUserIdToken() {
 
 // Function to export notes via Cloud Function
 async function exportNotes() {
-    const exportBtn = document.getElementById(‘export-notes-btn’);
+    const exportBtn = document.getElementById('export-notes-btn');
     if (!exportBtn) return;
 
     // Show loading state
@@ -327,10 +327,10 @@ function displayActivityLogs(activities) {
 }
 
 // Helper function to show notifications
-function showNotification(message, type = ‘info’) {
+function showNotification(message, type = 'info') {
     // Create notification element
-    const notification = document.createElement(‘div’);
-    notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 transition-all duration-300 transform translate-x-0`;
+    const notification = document.createElement('div');
+    notification.className = 'fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 transition-all duration-300 transform translate-x-0';
 
     // Style based on type
     if (type === 'success') {
