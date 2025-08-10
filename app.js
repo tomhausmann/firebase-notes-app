@@ -291,9 +291,9 @@ async function viewActivityLogs() {
 // Helper function to display activity logs (optional)
 function displayActivityLogs(activities) {
     // This is a simple implementation - you can enhance it with better UI
-    const logContainer = document.getElementById(‘activity-logs-container’);
+    const logContainer = document.getElementById('activity-logs-container');
     if (!logContainer) {
-        console.log(‘Activity logs:’, activities);
+        console.log('Activity logs:', activities);
         return;
     }
 
