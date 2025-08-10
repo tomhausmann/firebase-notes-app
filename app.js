@@ -171,6 +171,206 @@ async function addNote(event) {
     }
 }
 
+// — CLOUD FUNCTIONS INTEGRATION —
+
+// Function to get the current user’s ID token
+async function getUserIdToken() {
+    if (!currentUser || !auth.currentUser) {
+        throw new Error('No authenticated user');
+    }
+
+    try {
+        const idToken = await auth.currentUser.getIdToken(true); // true forces refresh
+        return idToken;
+    } catch (error) {
+        console.error('Failed to get ID token:', error);
+        throw error;
+    }
+
+}
+
+// Function to export notes via Cloud Function
+async function exportNotes() {
+    const exportBtn = document.getElementById(‘export-notes-btn’);
+    if (!exportBtn) return;
+
+    // Show loading state
+    const originalText = exportBtn.textContent;
+    exportBtn.textContent = 'Exporting...';
+    exportBtn.disabled = true;
+
+    try {
+        // Get fresh ID token
+        const idToken = await getUserIdToken();
+    
+        // Call Cloud Function with proper authentication
+        // Replace with your actual Cloud Function URL after deployment
+        const functionUrl = 'https://us-central1-web-app-64e52.cloudfunctions.net/exportNotes';
+    
+        const response = await fetch(functionUrl, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${idToken}`,
+                'Content-Type': 'application/json'
+            },
+        body: JSON.stringify({}) // Can add parameters if needed
+    });
+    
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Export failed');
+    }
+    
+    const result = await response.json();
+    
+    if (result.success && result.data) {
+        // Create downloadable JSON file
+        const dataStr = JSON.stringify(result.data, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        
+        // Create temporary download link
+        const downloadLink = document.createElement('a');
+        downloadLink.href = url;
+        downloadLink.download = `notes_export_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        
+        // Clean up
+        URL.revokeObjectURL(url);
+        
+        // Show success message
+        showNotification('Notes exported successfully!', 'success');
+    }
+    
+} catch (error) {
+    console.error('Export failed:', error);
+    showNotification(`Export failed: ${error.message}`, 'error');
+} finally {
+    // Restore button state
+    exportBtn.textContent = originalText;
+    exportBtn.disabled = false;
+}
+
+}
+
+// Function to view activity logs (optional - for demonstrating the event-driven function)
+async function viewActivityLogs() {
+    if (!currentUser) return;
+
+    try {
+        // Query recent activity logs
+        const logsRef = collection(db, "activity_logs");
+        const q = query(logsRef, where("userId", "==", currentUser.uid));
+    
+        const querySnapshot = await getDocs(q);
+        const activities = [];
+    
+        querySnapshot.forEach((doc) => {
+            activities.push({
+                id: doc.id,
+                ...doc.data()
+            });
+        });
+    
+        // Sort by timestamp
+        activities.sort((a, b) => b.timestamp - a.timestamp);
+    
+        console.log('Recent activities:', activities);
+    
+        // You can display these in a modal or separate section
+        displayActivityLogs(activities);
+    
+    } catch (error) {
+        console.error('Failed to fetch activity logs:', error);
+    }
+
+}
+
+// Helper function to display activity logs (optional)
+function displayActivityLogs(activities) {
+    // This is a simple implementation - you can enhance it with better UI
+    const logContainer = document.getElementById(‘activity-logs-container’);
+    if (!logContainer) {
+        console.log(‘Activity logs:’, activities);
+        return;
+    }
+
+    logContainer.innerHTML = '';
+
+    if (activities.length === 0) {
+        logContainer.innerHTML = '<p class="text-gray-500">No recent activity</p>';
+        return;
+    }
+
+    activities.forEach(activity => {
+        const logElement = document.createElement('div');
+        logElement.className = 'bg-gray-50 p-3 rounded-md mb-2';
+    
+        const timestamp = activity.timestamp?.toDate?.() || new Date(activity.timestamp);
+        const timeString = timestamp.toLocaleString();
+    
+        logElement.innerHTML = `
+            <div class="flex justify-between items-start">
+                <div>
+                    <span class="font-medium capitalize">${activity.activityType}</span>
+                    <span class="text-gray-600 text-sm ml-2">${timeString}</span>
+                </div>
+            </div>
+        <p class="text-sm text-gray-700 mt-1">${activity.noteContent || 'No content'}</p>
+        `;
+    
+        logContainer.appendChild(logElement);
+    });
+
+}
+
+// Helper function to show notifications
+function showNotification(message, type = ‘info’) {
+    // Create notification element
+    const notification = document.createElement(‘div’);
+    notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 transition-all duration-300 transform translate-x-0`;
+
+    // Style based on type
+    if (type === 'success') {
+        notification.className += ' bg-green-500 text-white';
+    } else if (type === 'error') {
+        notification.className += ' bg-red-500 text-white';
+    } else {
+        notification.className += ' bg-blue-500 text-white';
+    }
+
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        notification.style.transform = 'translateX(400px)';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
+
+}
+
+// Add event listener for export button (add this to your existing event listeners section)
+// You’ll need to add an export button to your HTML first
+document.addEventListener('DOMContentLoaded', () => {
+    const exportBtn = document.getElementById('export-notes-btn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', exportNotes);
+    }
+
+    const activityBtn = document.getElementById('view-activity-btn');
+    if (activityBtn) {
+        activityBtn.addEventListener('click', viewActivityLogs);
+    }
+
+});
+
+
+
 // --- 7. EVENT LISTENERS ---
 googleSignInBtn.addEventListener('click', signInWithGoogle);
 signOutBtn.addEventListener('click', signOutUser);
