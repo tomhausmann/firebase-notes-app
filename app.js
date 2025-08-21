@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getFirestore, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, updateDoc, arrayUnion, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { 
     getAuth, 
     onAuthStateChanged, 
@@ -312,57 +312,111 @@ async function exportNotes() {
 async function viewActivityLogs() {
     if (!currentUser) return;
 
-    try {
-        const logsRef = collection(db, "activity_logs");
-        const q = query(logsRef, where("userId", "==", currentUser.uid));
+    const activitySection = document.getElementById('activity-logs-section');
+    const viewActivityBtn = document.getElementById('view-activity-btn');
     
-        const querySnapshot = await getDocs(q);
-        const activities = [];
-    
-        querySnapshot.forEach((doc) => {
-            activities.push({
-                id: doc.id,
-                ...doc.data()
-            });
-        });
-    
-        activities.sort((a, b) => b.timestamp - a.timestamp);
-        console.log('Recent activities:', activities);
-        displayActivityLogs(activities);
-    } catch (error) {
-        console.error('Failed to fetch activity logs:', error);
+    // Toggle visibility
+    if (activitySection) {
+        if (activitySection.classList.contains('hidden')) {
+            activitySection.classList.remove('hidden');
+            viewActivityBtn.textContent = '📊 Hide Activity Log';
+            
+            // Fetch and display logs when showing
+            try {
+                const logsRef = collection(db, "activity_logs");
+                const q = query(
+                    logsRef, 
+                    where("userId", "==", currentUser.uid),
+                    orderBy("timestamp", "desc"),
+                    limit(20)
+                );
+            
+                const querySnapshot = await getDocs(q);
+                const activities = [];
+            
+                querySnapshot.forEach((doc) => {
+                    activities.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+            
+                console.log('Recent activities:', activities);
+                displayActivityLogs(activities);
+            } catch (error) {
+                console.error('Failed to fetch activity logs:', error);
+                showNotification('Failed to load activity logs', 'error');
+            }
+        } else {
+            activitySection.classList.add('hidden');
+            viewActivityBtn.textContent = '📊 View Activity Log';
+        }
     }
 }
 
 function displayActivityLogs(activities) {
     const logContainer = document.getElementById('activity-logs-container');
     if (!logContainer) {
-        console.log('Activity logs:', activities);
+        console.log('Activity logs container not found');
         return;
     }
 
     logContainer.innerHTML = '';
 
     if (activities.length === 0) {
-        logContainer.innerHTML = '<p class="text-gray-500">No recent activity</p>';
+        logContainer.innerHTML = '<p class="text-gray-500 text-center py-4">No activity logs yet. Start creating, updating, or deleting notes to see activity here.</p>';
         return;
     }
 
     activities.forEach(activity => {
         const logElement = document.createElement('div');
-        logElement.className = 'bg-gray-50 p-3 rounded-md mb-2';
+        logElement.className = 'bg-white p-4 rounded-lg shadow-sm mb-3 border-l-4 ';
+        
+        // Add color coding based on activity type
+        if (activity.activityType === 'created') {
+            logElement.className += 'border-green-500';
+        } else if (activity.activityType === 'updated') {
+            logElement.className += 'border-blue-500';
+        } else if (activity.activityType === 'deleted') {
+            logElement.className += 'border-red-500';
+        } else {
+            logElement.className += 'border-gray-400';
+        }
     
-        const timestamp = activity.timestamp?.toDate?.() || new Date(activity.timestamp);
+        // Handle timestamp properly - could be Firestore timestamp or seconds
+        let timestamp;
+        if (activity.timestamp?.toDate) {
+            timestamp = activity.timestamp.toDate();
+        } else if (activity.timestamp?.seconds) {
+            timestamp = new Date(activity.timestamp.seconds * 1000);
+        } else if (activity.timestamp) {
+            timestamp = new Date(activity.timestamp);
+        } else {
+            timestamp = new Date();
+        }
+        
         const timeString = timestamp.toLocaleString();
+        
+        // Truncate long content
+        const contentPreview = activity.noteContent 
+            ? (activity.noteContent.length > 100 
+                ? activity.noteContent.substring(0, 100) + '...' 
+                : activity.noteContent)
+            : 'No content available';
     
         logElement.innerHTML = `
-            <div class="flex justify-between items-start">
-                <div>
-                    <span class="font-medium capitalize">${activity.activityType}</span>
-                    <span class="text-gray-600 text-sm ml-2">${timeString}</span>
+            <div class="flex justify-between items-start mb-2">
+                <div class="flex items-center">
+                    <span class="font-semibold capitalize text-gray-800">
+                        ${activity.activityType === 'created' ? '➕ Created' : 
+                          activity.activityType === 'updated' ? '✏️ Updated' :
+                          activity.activityType === 'deleted' ? '🗑️ Deleted' : 
+                          activity.activityType}
+                    </span>
                 </div>
+                <span class="text-gray-500 text-sm">${timeString}</span>
             </div>
-            <p class="text-sm text-gray-700 mt-1">${activity.noteContent || 'No content'}</p>
+            <p class="text-sm text-gray-700">${contentPreview}</p>
         `;
     
         logContainer.appendChild(logElement);
