@@ -186,7 +186,16 @@ async function shareNote(noteId) {
 
 async function deleteNote(noteId) {
     if (!currentUser || !noteId) return;
-    await deleteDoc(doc(db, "notes", noteId));
+    
+    try {
+        // Delete the note
+        const noteRef = doc(db, "notes", noteId);
+        await deleteDoc(noteRef);
+        
+        // Activity logging is handled by Cloud Functions automatically
+    } catch (error) {
+        console.error("Error deleting note:", error);
+    }
 }
 
 function renderNote(note) {
@@ -229,12 +238,15 @@ async function addNote(event) {
     if (!content) return;
 
     try {
-        await addDoc(collection(db, "notes"), {
+        const docRef = await addDoc(collection(db, "notes"), {
             content: content,
             createdAt: new Date(),
             owner: currentUser.uid,
             collaborators: [currentUser.uid]
         });
+        
+        // Activity logging is handled by Cloud Functions automatically
+        
         noteContent.value = "";
     } catch (e) {
         console.error("Error adding document: ", e);
@@ -242,6 +254,8 @@ async function addNote(event) {
 }
 
 // — CLOUD FUNCTIONS INTEGRATION —
+// Note: Activity logging is handled automatically by Firebase Cloud Functions
+// The logNoteActivity function triggers on all note changes
 
 async function getUserIdToken() {
     if (!currentUser || !auth.currentUser) {
